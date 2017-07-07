@@ -26,16 +26,13 @@
   const colNum = 50;
   let grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
 
-  //Check if space is in bounds
 
   const isInBounds = (row, col) => {
     return (row < rowNum && row >= 0) && (col < colNum && col >= 0);
   };
 
-  // I need a way to open spaces
 
   intermediateSpace = (current, prev) => {
-    //use average!
     [currentRow, currentCol] = current;
     [prevRow, prevCol] = prev;
     intermediateRow = (currentRow + prevRow) / 2;
@@ -44,7 +41,16 @@
   };
 
   const openSpace = (pos, prev) => {
+    //when I've made my choice, I need to check the point I decided to move
+    //to and clear any places where there is one space between two white spaces
+    //aka I need to look around the space chose, and for any invalid space from
+    //that space, which is pos, I need to turn the intermediate squres
+    //of anything that is not valid black
+    //I need to get the positions around pos
+    //then I need to select invalid positions that have a free space intermed
+    //those spots I paint black
     [row, col] = pos;
+
     grid[row][col] = 1;
     paintWhite(pos)
     if (prev) {
@@ -53,6 +59,16 @@
       paintWhite([intRow, intCol]);
     }
 
+    //take care of cleanup here
+    surroundingPositions(pos).filter((surrounding) => {
+      [surrX, surrY] = surrounding;
+      if (!isValidSpace(surrounding)){
+        [interX, interY] = intermediateSpace(pos, surrounding)
+        if (grid[interX][interY] === 0){
+          paintBlack([interX, interY]);
+        }
+      }
+    })
   };
 
   const isValidSpace = (pos) => {
@@ -60,7 +76,6 @@
     return isInBounds(row, col) && grid[row][col] === 0;
   };
 
-  //surrounding positions
   const surroundingPositions = (pos) => {
     let [row, col] = pos;
     let positions = [];
@@ -76,8 +91,6 @@
 
 
   const validProbe = (probe) => {
-    //first, validate that the space is in bounds and empty using isValidSpace
-    //lastly, should look at all directions except the one it came from, and return false if a space is opened
     if (!isValidSpace(probe.pos)) return false;
     return true;
     // let [row, col] = probe.pos;
@@ -114,11 +127,8 @@
   };
 
 
-  //needs to store all directions maze could go
-
   let frontier = [];
 
-  //Will also need a way to pop a random frontier from the array of frontier spaces
 
   Array.prototype.randomPop = function(){
     var i = 0, j = 0, temp = null;
@@ -131,37 +141,26 @@
     return this.pop();
   };
 
-  //will loop until what. Say we have a count of x * y. Everytime we open a space, we decrement. nope,
-  //because we dont know how many squares will be filled. Another strategy will be to go until there is
-  //nothing in the frontier, meaning it would need to start off with a little push...
   const startPos = [0, 0];
 
-  //condition could be while fronier has something in it keep going?
 
   const buildMaze = (start) => {
-    //this is the push to get started
     openSpace(start);
     buildFrontier(start);
 
     while (frontier.length > 0){
       nextOpenSpace = frontier.randomPop();
       openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
-      //clear surrounding frontiers
       frontier = frontier.filter((probe) => {
         return surroundingPositions(nextOpenSpace.pos).every(pos => {
           return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
         });
       });
-      //generate new frontiers
       buildFrontier(nextOpenSpace.pos);
-      //eventually, do something visually
-      //reloop!
     }
   };
 
-  //lets try the timer...
 
-  //first initialize that shit
 
 
   d3.selection.prototype.last = function() {
@@ -179,7 +178,6 @@
     .attr("height", 490);
     for (let i = 0; i < 50; i++){
       for(let j = 0; j < 50; j++ ){
-        // var svgNS = "http://www.w3.org/2000/svg";
 
         svgg.append("rect")
         .attr({
@@ -200,11 +198,22 @@ function paintWhite(coords){
   node.setAttribute("fill", "white");
 }
 
+function paintRed(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "blue");
+}
+
+function paintBlack(coords){
+  [row, col] = coords;
+  const node = pointers[row][col];
+  node.setAttribute("fill", "black");
+}
+
 buildGrid();
 openSpace(startPos);
 buildFrontier(startPos);
 
-  //now we go
   stopCreating = setInterval(() => {
 
     if (frontier.length === 0){
@@ -220,50 +229,15 @@ buildFrontier(startPos);
         return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
       });
     });
-    //generate new frontiers
-    buildFrontier(nextOpenSpace.pos);
-      // //clear surrounding frontiers
 
-      // //generate new frontiers
-      // buildFrontier(nextOpenSpace.pos);
-      // var svg = d3.select("#maze")
-      // .append("svg")
-      // .classed("svg", true)
-      // .style("border", "10px solid black")
-      // .attr("transform", "translate(10, 10 )")
-      // .attr("width", 490)
-      // .attr("height", 490);
-      // var output = svg.append("g")
-      // .selectAll("g")
-      // .data(grid)
-      // .enter()
-      // .append("g") //removing
-      // .selectAll("g") // these
-      // .data( function(d) { return d; } ) //lines
-      // .enter() //text displays normally
-      // .append("rect")
-      // .attr({
-      //   x: function(d,i,j) { return (i * 10); },
-      //   y: function(d,i,j) { return (j * 10); },
-      //   width: 10,
-      //   height: 10,
-      //   fill: function(d){
-      //     if (d === 1) return "white";
-      //     return "black";
-      //   }
-      // })
-      // .attr("x", function(d,i,j) { return (i * 10); })
-      // .attr("y", function(d,i,j) { return (j * 10); })
-      // .attr("width", function(d,i,j) { return 10; })
-      // .attr("height", function(d,i,j) { return 10; })
-      // .attr("fill", function(d){
-      //   if (d === 1) return "white";
-      //   return "black";
-      // })
-  }, 5);
-//store an array of pointers to rectangles
-//create pointers when I initailize grid
-//goal is to create a black grid with pointers to everyting
+    frontier.forEach((probe) => {
+      [interRow, interCol] = intermediateSpace(probe.pos, probe.prev);
+      paintRed([interRow, interCol]);
+      paintRed(probe.pos);
+    });
+    buildFrontier(nextOpenSpace.pos);
+
+  }, 1);
 
       </script>
       </body>

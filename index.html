@@ -10,6 +10,7 @@
 <body>
 
 <div id="maze"></div>
+<div id="mazed"></div>
 <svg width="500" height="500"></svg>
 <script type="text/javascript" src="grid.js"></script>
 <script type="text/javascript">
@@ -45,10 +46,13 @@
   const openSpace = (pos, prev) => {
     [row, col] = pos;
     grid[row][col] = 1;
+    paintWhite(pos)
     if (prev) {
       [intRow, intCol] = intermediateSpace(pos, prev);
       grid[intRow][intCol] = 1;
+      paintWhite([intRow, intCol]);
     }
+
   };
 
   const isValidSpace = (pos) => {
@@ -158,69 +162,109 @@
   //lets try the timer...
 
   //first initialize that shit
-  openSpace(startPos);
-  buildFrontier(startPos);
+
+
+  d3.selection.prototype.last = function() {
+    var last = this.size() - 1;
+    return d3.select(this[0][last]);
+  };
+  let pointers = new Array(50).fill(0).map(row => new Array(50).fill(0));
+  function buildGrid(){
+    let svgg = d3.select("#mazed")
+    .append("svg")
+
+    .style("border", "10px solid black")
+    .attr("transform", "translate(10, 10 )")
+    .attr("width", 490)
+    .attr("height", 490);
+    for (let i = 0; i < 50; i++){
+      for(let j = 0; j < 50; j++ ){
+        // var svgNS = "http://www.w3.org/2000/svg";
+
+        svgg.append("rect")
+        .attr({
+          x: i * 10,
+          y: j * 10,
+          width: 10,
+          height: 10,
+          fill: "black"
+          })
+        pointers[i][j] = d3.selectAll("rect").last()[0][0];
+      }
+    }
+  };
+
+function paintWhite(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "white");
+}
+
+buildGrid();
+openSpace(startPos);
+buildFrontier(startPos);
 
   //now we go
   stopCreating = setInterval(() => {
-      d3.select("svg").remove();
-      nextOpenSpace = frontier.randomPop();
-      openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
-      //clear surrounding frontiers
-      frontier = frontier.filter((probe) => {
-        return surroundingPositions(nextOpenSpace.pos).every(pos => {
-          return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
-        });
+
+    if (frontier.length === 0){
+      clearInterval(stopCreating);
+    }
+
+    nextOpenSpace = frontier.randomPop();
+    openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
+
+    //clear surrounding frontiers
+    frontier = frontier.filter((probe) => {
+      return surroundingPositions(nextOpenSpace.pos).every(pos => {
+        return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
       });
-      //generate new frontiers
-      buildFrontier(nextOpenSpace.pos);
-      var svg = d3.select("#maze")
-      .append("svg")
-      .classed("svg", true)
-      .style("border", "10px solid black")
-      .attr("transform", "translate(10, 10 )")
-      .attr("width", 490)
-      .attr("height", 490);
-      var output = svg.append("g")
-      .selectAll("g")
-      .data(grid)
-      .enter()
-      .append("g") //removing
-      .selectAll("g") // these
-      .data( function(d) { return d; } ) //lines
-      .enter() //text displays normally
-      .append("rect")
-      .attr("x", function(d,i,j) { return (i * 10); })
-      .attr("y", function(d,i,j) { return (j * 10); })
-      .attr("width", function(d,i,j) { return 10; })
-      .attr("height", function(d,i,j) { return 10; })
-      .attr("fill", function(d){
-        if (d === 1) return "white";
-        return "black";
-      })
-      console.log(output);
-  }, 1/1000);
+    });
+    //generate new frontiers
+    buildFrontier(nextOpenSpace.pos);
+      // //clear surrounding frontiers
+
+      // //generate new frontiers
+      // buildFrontier(nextOpenSpace.pos);
+      // var svg = d3.select("#maze")
+      // .append("svg")
+      // .classed("svg", true)
+      // .style("border", "10px solid black")
+      // .attr("transform", "translate(10, 10 )")
+      // .attr("width", 490)
+      // .attr("height", 490);
+      // var output = svg.append("g")
+      // .selectAll("g")
+      // .data(grid)
+      // .enter()
+      // .append("g") //removing
+      // .selectAll("g") // these
+      // .data( function(d) { return d; } ) //lines
+      // .enter() //text displays normally
+      // .append("rect")
+      // .attr({
+      //   x: function(d,i,j) { return (i * 10); },
+      //   y: function(d,i,j) { return (j * 10); },
+      //   width: 10,
+      //   height: 10,
+      //   fill: function(d){
+      //     if (d === 1) return "white";
+      //     return "black";
+      //   }
+      // })
+      // .attr("x", function(d,i,j) { return (i * 10); })
+      // .attr("y", function(d,i,j) { return (j * 10); })
+      // .attr("width", function(d,i,j) { return 10; })
+      // .attr("height", function(d,i,j) { return 10; })
+      // .attr("fill", function(d){
+      //   if (d === 1) return "white";
+      //   return "black";
+      // })
+  }, 5);
+//store an array of pointers to rectangles
+//create pointers when I initailize grid
+//goal is to create a black grid with pointers to everyting
 
       </script>
       </body>
     </html>
-
-  <!DOCTYPE html>
-  <html>
-  <head>
-  <title>Grid using d3.js</title>
-  <script src="https://d3js.org/d3.v3.min.js"></script>
-  <script type="text/javascript">
-
-  </script>
-  </head>
-  <body>
-
-  <div id="maze"></div>
-
-  <script type="text/javascript" src="grid.js"></script>
-  <script type="text/javascript">
-
-  </script>
-  </body>
-  </html>

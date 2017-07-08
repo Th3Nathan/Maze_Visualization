@@ -1,0 +1,53 @@
+body {
+  width: 1000px;
+  padding-top: 50px;
+  margin: auto;
+  align-items: center;
+}
+
+img {
+  width: 600px;
+  position: relative;
+  top: 15px;
+  z-index: -1;
+  left: 40px;
+}
+
+.toggle {
+  background: none;
+  border: none;
+  outline: none;
+  color: #62110a;
+  font-size: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 10px;
+}
+
+.buttons {
+  display: flex;
+  margin-left: 150px;
+  margin-top: 5px;
+  margin-bottom: 20px;
+}
+
+.link {
+  font-size: 30px;
+  padding-right: 7px;
+}
+
+.logo {
+  position: relative;
+}
+
+.links {
+  position: absolute;
+  top: 120px;
+  right: 390px;
+  display: flex;
+}
+
+.selected {
+  background: #88e292;
+  border-radius: 500px;
+}

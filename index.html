@@ -2,16 +2,37 @@
 <html>
 <head>
 <title>Grid using d3.js</title>
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<script type="text/javascript">
+<script src="https://use.fontawesome.com/421bdc1e30.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript">
 </script>
 </head>
 <body>
-
+<div class="logo">
+  <img src="images/logo.png">
+  <div class="links">
+    <a class="link" href="https://th3nathan.github.io/">
+      <i class="fa fa-suitcase fa-4" aria-hidden="true"></i>
+    </a>
+    <a class="link" href="https://www.linkedin.com/in/nathan-vass-4b9490132/">
+      <i class="fa fa-linkedin fa-4" aria-hidden="true"></i>
+    </a>
+    <a class="link" href="https://github.com/Th3Nathan">
+      <i class="fa fa-github fa-4" aria-hidden="true"></i>
+    </a>
+  </div>
+</div>
 <div id="maze"></div>
-<div id="mazed"></div>
-<svg width="500" height="500"></svg>
+<div class="buttons">
+  <button id="random" class="toggle selected">Random</button>
+  <button class="toggle">Random Walker</button>
+  <button class="toggle">Depth First</button>
+</div>
+
+
 <script type="text/javascript" src="grid.js"></script>
 <script type="text/javascript">
 
@@ -22,10 +43,19 @@
 
   <script type="text/javascript">
 
-  const rowNum = 50;
-  const colNum = 50;
+  $('.toggle').on('click', function(){
+      $('.toggle').removeClass('selected');
+      $(this).addClass('selected');
+  });
+
+
+  const rowNum = 100;
+  const colNum = 80;
   let grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
 
+  const resetGrid = (rowNum, colNum) => {
+    grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
+  }
 
   const isInBounds = (row, col) => {
     return (row < rowNum && row >= 0) && (col < colNum && col >= 0);
@@ -41,14 +71,7 @@
   };
 
   const openSpace = (pos, prev) => {
-    //when I've made my choice, I need to check the point I decided to move
-    //to and clear any places where there is one space between two white spaces
-    //aka I need to look around the space chose, and for any invalid space from
-    //that space, which is pos, I need to turn the intermediate squres
-    //of anything that is not valid black
-    //I need to get the positions around pos
-    //then I need to select invalid positions that have a free space intermed
-    //those spots I paint black
+
     [row, col] = pos;
 
     grid[row][col] = 1;
@@ -167,24 +190,25 @@
     var last = this.size() - 1;
     return d3.select(this[0][last]);
   };
-  let pointers = new Array(50).fill(0).map(row => new Array(50).fill(0));
+  let pointers = new Array(100).fill(0).map(row => new Array(80).fill(0));
   function buildGrid(){
-    let svgg = d3.select("#mazed")
+    let svgg = d3.select("#maze")
     .append("svg")
 
-    .style("border", "10px solid black")
-    .attr("transform", "translate(10, 10 )")
-    .attr("width", 490)
-    .attr("height", 490);
-    for (let i = 0; i < 50; i++){
-      for(let j = 0; j < 50; j++ ){
+    .style("border", "solid black")
+    .style("border-width", "7px 0px 0px 7px")
+    // .attr("transform", "translate(200, 100 )")
+    .attr("width", 700)
+    .attr("height", 560);
+    for (let i = 0; i < 100; i++){
+      for(let j = 0; j < 80; j++ ){
 
         svgg.append("rect")
         .attr({
-          x: i * 10,
-          y: j * 10,
-          width: 10,
-          height: 10,
+          x: i * 7,
+          y: j * 7,
+          width: 7,
+          height: 7,
           fill: "black"
           })
         pointers[i][j] = d3.selectAll("rect").last()[0][0];
@@ -211,16 +235,16 @@ function paintBlack(coords){
 }
 
 buildGrid();
-openSpace(startPos);
-buildFrontier(startPos);
 
-  stopCreating = setInterval(() => {
+function buildRandom(){
+  openSpace(startPos);
+  buildFrontier(startPos);
+  return setInterval(() => {
 
+    nextOpenSpace = frontier.randomPop();
     if (frontier.length === 0){
       clearInterval(stopCreating);
     }
-
-    nextOpenSpace = frontier.randomPop();
     openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
 
     //clear surrounding frontiers
@@ -237,7 +261,23 @@ buildFrontier(startPos);
     });
     buildFrontier(nextOpenSpace.pos);
 
-  }, 1);
+  }, 5);
+}
+
+stopCreating = buildRandom();
+
+  $("#random").click(function(){
+    clearInterval(stopCreating);
+    resetGrid(100, 80);
+    pointers.forEach((row) => {
+      row.forEach((node) => {
+        node.setAttribute("fill", "black");
+      })
+    })
+    frontier = [];
+    stopCreating = buildRandom();
+  });
+
 
       </script>
       </body>

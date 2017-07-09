@@ -306,61 +306,72 @@ const validExplore = (probe) => {
 };
 
 
+//change gears, for each state of the maze, store an object with data to paint each color
+//calculate the maze, then draw it after
+let moves = [];
+let timeouts = [];
 
 const explore = (start, prev) => {
+  let move = {
+    white: [],
+    black: [],
+    blue: []
+  };
+
   if (!$("#dfs").hasClass("selected")){
     return null;
   }
     openExplore(start, prev);
-    // setTimeout(() => {
     //color prev to open white
     if (prev){
-      paintWhite(intermediateSpace(start, prev));
-      paintWhite(prev);
+      move.white.push(intermediateSpace(start, prev));
+      move.white.push(prev);
     }
 
-    paintWhite(start);
-    //paint start open spaces blue
+    move.white.push(start);
 
     surroundingPositions(start).forEach((square) => {
       if (isValidSpace(square)){
-        paintBlue(intermediateSpace(start, square))
-        paintBlue(square)
+        move.blue.push(intermediateSpace(start, square))
+        move.blue.push(square)
       }
-      else {
-        // [surroundRow, surroundCol] = square;
-        // [currRow, currCol] = start;
-        // if (surroundRow !== currRow || surroundCol !== currCol)
-        //   paintBlack(intermediateSpace(start, square))
+      else if (square[0] !== start[0] || square[1] !== start[1]){
+        move.black.push(intermediateSpace(start, square))
       }
     });
-    //paint start not open spaces black in the intermediate zone
-    let exploreFrontier = buildExploreFrontier(start).shuffle();
-    exploreFrontier.forEach((probe) => {
-      if (validExplore(probe)){
-        explore(probe, start)
-      }
-      else {
-        paintBlack(intermediateSpace(start, probe))
-      }
-    });
-
-    // surroundingPositions(start).forEach((square) => {
-    //   if (!isValidSpace(square)){
-    //     [surroundRow, surroundCol] = square;
-    //     [currRow, currCol] = start;
-    //     if (surroundRow !== currRow || surroundCol !== currCol)
-    //       paintBlack(intermediateSpace(start, square))
-    //   }
-    // });
-
-  // }, 1000);
+    moves.push(move);
+    let exploreFrontier = surroundingPositions(start).shuffle();
+      exploreFrontier.forEach((probe, i) => {
+          if (validExplore(probe)){
+            explore(probe, start)
+          }
+          else {
+            // move.black.push(intermediateSpace(start, probe))
+          }
+      });
 };
+
+const drawDFS = (moves) => {
+    moves.forEach((move, i) => {
+      timeout = setTimeout(() => {
+        move.blue.forEach((pos) => paintBlue(pos))
+        move.black.forEach((pos) => paintBlack(pos))
+        move.white.forEach((posi) => paintWhite(posi))
+      }, 10 * i)
+      timeouts.push(timeout);
+    })
+
+}
 
 stopCreating = buildRandom();
 
 const reset = () => {
   clearInterval(stopCreating);
+  moves = [];
+  timeouts = timeouts.map((timeout) => {
+    clearTimeout(timeout)
+    return null;
+  });
   resetGrid(100, 80);
   pointers.forEach((row) => {
     row.forEach((node) => {
@@ -377,10 +388,10 @@ const reset = () => {
 
   $("#dfs").click(function(){
     reset();
-    explore(startPos)
-
+    moves = [];
+    explore(startPos);
+    drawDFS(moves);
   })
-
       </script>
       </body>
     </html>

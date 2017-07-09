@@ -1,47 +1,100 @@
-## Maze Creation Visualizations
+# aMAZEing Visuals
+![image](./images/screenshot.png)
 
-### Background
+[live](http://th3nathan.github.io/maze/)
 
-Although finished mazes may look similar, the algorithms used to create them can be extremely varied. This project will show the process of maze creation using different algorithms.
+Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach and a depth first approach.
 
-### Functionality & MVP  
+## Technologies
+- JavaScript
+- d3
+- JQuery
 
-Users should be able to do the following:
+## Features and Implementation
 
-- [ ] View completed mazes
-- [ ] View the process of building that maze
-- [ ] Select from multiple algorithm approaches to building the mazes
-- [ ] The process is animated with attractive visualizations
+d3 is used to construct the maze grid. d3 is not used to update the maze because repainting the entire maze and binding the mazes data state takes too much time. Instead, I store pointers to all the grid spaces and change thier color induvidually through vanilla JavaScript. JQuery is used for convenient click handling and class manipulation.
 
-In addition, this project will include:
+###Using a timer with depth first algorithm###
 
-- [ ] A production README
+Using asynchronous functions to slow down the rendering of dfs maze creations was challenging, because without knowing how long the recursive call would take, it was impossible to know how long to set a timer. To get around this, I seperated the maze creation and painting process. First, for every iteration of the maze I stored the spaces to be colored,
 
-### Wireframes
+```JavaScript
+const explore = (start, prev) => {
+  let move = {
+    white: [],
+    black: [],
+    blue: []
+  };
 
-This app will consist of multiple maze boards, labeled by algorithm type. When a user clicks on a board, the maze will be created. Each board corresponds to a different canvas.
+  if (!$("#dfs").hasClass("selected")){
+    return null;
+  }
+  openExplore(start, prev);
+  if (prev){
+    move.white.push(intermediateSpace(start, prev));
+    move.white.push(prev);
+  }
+  move.white.push(start);
 
-![wireframes](proposal.png)
+  surroundingPositions(start).forEach((square) => {
+    if (isValidSpace(square)){
+      move.blue.push(intermediateSpace(start, square))
+      move.blue.push(square)
+    }
+    else if (square[0] !== start[0] || square[1] !== start[1]){
+      move.black.push(intermediateSpace(start, square))
+     }
+  });
+  moves.push(move);
+  let exploreFrontier = surroundingPositions(start).shuffle();
+  exploreFrontier.forEach((probe) => {
+    explore(probe, start)
+  });
+};
+```
 
-### Architecture and Technologies
+Then, I iterated over those maze states, adding a timer.
 
-This project will be implemented with the following technologies:
+```JavaScript
+const drawDFS = (moves) => {
+    moves.forEach((move, i) => {
+      timeout = setTimeout(() => {
+        move.blue.forEach((pos) => paintBlue(pos))
+        move.black.forEach((pos) => paintBlack(pos))
+        move.white.forEach((posi) => paintWhite(posi))
+      }, 10 * i)
+      timeouts.push(timeout);
+    })
+}
+```
 
-- JavaScript for maze creation logic
-- d3 data visualization library for dom manipulation,
-- html5 with canvas to display the mazes
-- react to allow users to toggle which maze is displayed
+### d3 Repainting
+It was not feasable to re-render my grid at every stop of the maze from the underlying grid data, because it would take too long. Instead, I stored pointers to each grid of the svg I created using d3, and manipulated the color of only the squares I needed to change.
 
-### Implementation Timeline
+```JavaScript
+  function buildGrid(){
+    let svg = d3.select("#maze")
+    .append("svg")
+    .style("border", "solid black")
+    .style("border-width", "7px 0px 0px 7px")
+    .attr("width", 700)
+    .attr("height", 560);
+    for (let i = 0; i < 100; i++){
+      for(let j = 0; j < 80; j++ ){
+        svg.append("rect")
+        .attr({
+          x: i * 7,
+          y: j * 7,
+          width: 7,
+          height: 7,
+          fill: "black"
+          })
+        pointers[i][j] = d3.selectAll("rect").last()[0][0];
+      }
+    }
+  };
+```
 
-**Day 1**: Get three canvases on the page, create a grid of maze squares and be able to access and manipulate them. Create a click handler. Load a sample maze on the page from the same data format the algorithms will produce.
-
-**Day 2**: Toggle which maze is displayed using react. Write maze creation algorithms using randomness, random walker, and dfs approaches to maze creation. Allow these mazes to be generated on click. Slow down the process and add attractive visual elements.
-
-**Day 3**: Either finish day two's work or add a more efficient algorithm.
-
-### Bonus features
-
-- [ ] Invent a maze creation or solving algorithm
-- [ ] Allow users to navigate the maze
-- [ ] Allow users to customize visualizations
+## Future Features
+1. Add more algorithms
+2. Add a maze solver

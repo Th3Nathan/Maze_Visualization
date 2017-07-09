@@ -205,7 +205,6 @@
     .attr("height", 560);
     for (let i = 0; i < 100; i++){
       for(let j = 0; j < 80; j++ ){
-
         svgg.append("rect")
         .attr({
           x: i * 7,
@@ -360,7 +359,6 @@ const drawDFS = (moves) => {
       }, 10 * i)
       timeouts.push(timeout);
     })
-
 }
 
 stopCreating = buildRandom();

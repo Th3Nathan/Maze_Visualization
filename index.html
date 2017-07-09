@@ -328,8 +328,10 @@ const explore = (start, prev) => {
         paintBlue(square)
       }
       else {
-        if (!isValidSpace(square))
-          paintBlack(intermediateSpace(start, square))
+        // [surroundRow, surroundCol] = square;
+        // [currRow, currCol] = start;
+        // if (surroundRow !== currRow || surroundCol !== currCol)
+        //   paintBlack(intermediateSpace(start, square))
       }
     });
     //paint start not open spaces black in the intermediate zone
@@ -338,7 +340,20 @@ const explore = (start, prev) => {
       if (validExplore(probe)){
         explore(probe, start)
       }
+      else {
+        paintBlack(intermediateSpace(start, probe))
+      }
     });
+
+    // surroundingPositions(start).forEach((square) => {
+    //   if (!isValidSpace(square)){
+    //     [surroundRow, surroundCol] = square;
+    //     [currRow, currCol] = start;
+    //     if (surroundRow !== currRow || surroundCol !== currCol)
+    //       paintBlack(intermediateSpace(start, square))
+    //   }
+    // });
+
   // }, 1000);
 };
 

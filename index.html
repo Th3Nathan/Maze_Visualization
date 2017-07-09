@@ -29,7 +29,7 @@
 <div class="buttons">
   <button id="random" class="toggle selected">Random</button>
   <button class="toggle">Random Walker</button>
-  <button class="toggle">Depth First</button>
+  <button id="dfs" class="toggle">Depth First</button>
 </div>
 
 
@@ -152,8 +152,7 @@
 
   let frontier = [];
 
-
-  Array.prototype.randomPop = function(){
+  Array.prototype.shuffle = function(){
     var i = 0, j = 0, temp = null;
     for (i = this.length - 1; i > 0; i -= 1) {
       j = Math.floor(Math.random() * (i + 1));
@@ -161,7 +160,11 @@
       this[i] = this[j];
       this[j] = temp;
     }
-    return this.pop();
+    return this;
+  };
+
+  Array.prototype.randomPop = function(){
+    return this.shuffle().pop();
   };
 
   const startPos = [0, 0];
@@ -227,6 +230,11 @@ function paintRed(coords){
   const node = pointers[row][col]
   node.setAttribute("fill", "blue");
 }
+function paintBlue(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "blue");
+}
 
 function paintBlack(coords){
   [row, col] = coords;
@@ -256,28 +264,107 @@ function buildRandom(){
 
     frontier.forEach((probe) => {
       [interRow, interCol] = intermediateSpace(probe.pos, probe.prev);
-      paintRed([interRow, interCol]);
-      paintRed(probe.pos);
+      paintBlue([interRow, interCol]);
+      paintBlue(probe.pos);
     });
     buildFrontier(nextOpenSpace.pos);
 
   }, 5);
 }
 
+const openExplore = (pos, prev) => {
+  [row, col] = pos;
+  grid[row][col] = 1;
+
+  if (prev) {
+    [intRow, intCol] = intermediateSpace(pos, prev);
+    grid[intRow][intCol] = 1;
+  }
+};
+
+const validExplore = (probe) => {
+  if (!isValidSpace(probe)) return false;
+  return true;
+};
+
+  const buildExploreFrontier = (pos) => {
+  let [row, col] = pos;
+  let surroundingSquares = [];
+  surroundingSquares.push(
+    [row - 2, col]
+  );
+  surroundingSquares.push(
+    [row, col + 2]
+  );
+  surroundingSquares.push(
+    [row + 2, col]
+  );
+  surroundingSquares.push(
+    [row, col - 2]
+  );
+  return surroundingSquares.filter(probe => validExplore(probe));
+};
+
+
+
+const explore = (start, prev) => {
+  if (!$("#dfs").hasClass("selected")){
+    return null;
+  }
+    openExplore(start, prev);
+    // setTimeout(() => {
+    //color prev to open white
+    if (prev){
+      paintWhite(intermediateSpace(start, prev));
+      paintWhite(prev);
+    }
+
+    paintWhite(start);
+    //paint start open spaces blue
+
+    surroundingPositions(start).forEach((square) => {
+      if (isValidSpace(square)){
+        paintBlue(intermediateSpace(start, square))
+        paintBlue(square)
+      }
+      else {
+        if (!isValidSpace(square))
+          paintBlack(intermediateSpace(start, square))
+      }
+    });
+    //paint start not open spaces black in the intermediate zone
+    let exploreFrontier = buildExploreFrontier(start).shuffle();
+    exploreFrontier.forEach((probe) => {
+      if (validExplore(probe)){
+        explore(probe, start)
+      }
+    });
+  // }, 1000);
+};
+
 stopCreating = buildRandom();
 
-  $("#random").click(function(){
-    clearInterval(stopCreating);
-    resetGrid(100, 80);
-    pointers.forEach((row) => {
-      row.forEach((node) => {
-        node.setAttribute("fill", "black");
-      })
+const reset = () => {
+  clearInterval(stopCreating);
+  resetGrid(100, 80);
+  pointers.forEach((row) => {
+    row.forEach((node) => {
+      node.setAttribute("fill", "black");
     })
+  })
+}
+
+  $("#random").click(function(){
+    reset();
     frontier = [];
     stopCreating = buildRandom();
   });
 
+  $("#dfs").click(function(){
+    reset();
+    explore(startPos)
+
+  })
 
       </script>
       </body>

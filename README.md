@@ -1,9 +1,9 @@
 # aMAZEing Visuals
 ![image](./images/screenshot.png)
 
-[live](http://th3nathan.github.io/maze/)
+[live](https://th3nathan.github.io/Maze_Visualization/)
 
-Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach and a depth first approach.
+Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach, a depth first approach, and one using a random walker.
 
 ## Technologies
 - JavaScript
@@ -12,11 +12,11 @@ Displays visualizations of how different algorithms create mazes. Spaces the com
 
 ## Features and Implementation
 
-d3 is used to construct the maze grid. d3 is not used to update the maze because repainting the entire maze and binding the mazes data state takes too much time. Instead, I store pointers to all the grid spaces and change thier color induvidually through vanilla JavaScript. JQuery is used for convenient click handling and class manipulation.
+d3 is used to construct the maze grid. d3 is not used to update the maze because repainting the entire maze and binding the mazes data state using it would take too long to render for a smooth visualization. Instead, I store pointers to all the grid spaces and change their color individually through vanilla JavaScript. JQuery is used for convenient click handling and class manipulation.
 
 ###Using a timer with depth first algorithm###
 
-Using asynchronous functions to slow down the rendering of dfs maze creations was challenging, because without knowing how long the recursive call would take, it was impossible to know how long to set a timer. To get around this, I seperated the maze creation and painting process. First, for every iteration of the maze I stored the spaces to be colored,
+Using asynchronous functions to slow down the rendering of my dfs maze creation was challenging, because without knowing how long the recursive call would take, it was impossible to know how long to set a timer. To get around this, I separated the maze creation and painting process. First, for every iteration of the maze I stored the spaces to be colored,
 
 ```JavaScript
 const explore = (start, prev) => {

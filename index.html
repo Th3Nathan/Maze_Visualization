@@ -1,245 +1,176 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Grid using d3.js</title>
-<script src="https://use.fontawesome.com/421bdc1e30.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <head>
+    <title>aMAZEing Visuals</title>
+    <script src="https://use.fontawesome.com/421bdc1e30.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+  </head>
 
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<link rel="stylesheet" type="text/css" href="style.css">
-<script type="text/javascript">
-</script>
-</head>
-<body>
-<div class="logo">
-  <img src="images/logo.png">
-  <div class="links">
-    <a class="link" href="https://th3nathan.github.io/">
-      <i class="fa fa-suitcase fa-4" aria-hidden="true"></i>
-    </a>
-    <a class="link" href="https://www.linkedin.com/in/nathan-vass-4b9490132/">
-      <i class="fa fa-linkedin fa-4" aria-hidden="true"></i>
-    </a>
-    <a class="link" href="https://github.com/Th3Nathan">
-      <i class="fa fa-github fa-4" aria-hidden="true"></i>
-    </a>
-  </div>
-</div>
-<div id="maze"></div>
-<div class="buttons">
-  <button id="random" class="toggle selected">Random</button>
-  <button id="walk" class="toggle">Random Walker</button>
-  <button id="dfs" class="toggle">Depth First</button>
-</div>
+  <body>
+    <div class="logo">
+      <img src="images/logo.png">
+      <div class="links">
+        <a class="link" href="https://th3nathan.github.io/">
+          <i class="fa fa-suitcase fa-4" aria-hidden="true"></i>
+        </a>
+        <a class="link" href="https://www.linkedin.com/in/nathan-vass-4b9490132/">
+          <i class="fa fa-linkedin fa-4" aria-hidden="true"></i>
+        </a>
+        <a class="link" href="https://github.com/Th3Nathan">
+          <i class="fa fa-github fa-4" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
 
-
-<script type="text/javascript" src="grid.js"></script>
-<script type="text/javascript">
-
-</script>
-</body>
-</html>
-
+    <div id="maze"></div>
+    <div class="buttons">
+      <button id="random" class="toggle selected">Random</button>
+      <button id="walk" class="toggle">Random Walker</button>
+      <button id="dfs" class="toggle">Depth First</button>
+    </div>
 
   <script type="text/javascript">
 
-  $('.toggle').on('click', function(){
-      $('.toggle').removeClass('selected');
-      $(this).addClass('selected');
-  });
-
-
-  const rowNum = 100;
-  const colNum = 80;
-  let grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
-
-  const resetGrid = (rowNum, colNum) => {
-    grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
+Array.prototype.shuffle = function(){
+  var i = 0, j = 0, temp = null;
+  for (i = this.length - 1; i > 0; i -= 1) {
+    j = Math.floor(Math.random() * (i + 1));
+    temp = this[i];
+    this[i] = this[j];
+    this[j] = temp;
   }
+  return this;
+};
 
-  const isInBounds = (row, col) => {
-    return (row < rowNum && row >= 0) && (col < colNum && col >= 0);
-  };
+Array.prototype.randomPop = function(){
+  return this.shuffle().pop();
+};
 
 
-  intermediateSpace = (current, prev) => {
-    [currentRow, currentCol] = current;
-    [prevRow, prevCol] = prev;
-    intermediateRow = (currentRow + prevRow) / 2;
-    intermediateCol = (currentCol + prevCol) / 2;
-    return [intermediateRow, intermediateCol];
-  };
+d3.selection.prototype.last = function() {
+  var last = this.size() - 1;
+  return d3.select(this[0][last]);
+};
 
-  const openSpace = (pos, prev) => {
+const rowNum = 100;
+const colNum = 80;
+let grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
 
-    [row, col] = pos;
+const resetGrid = (rowNum, colNum) => {
+  grid = new Array(rowNum).fill(0).map(row => new Array(colNum).fill(0));
+}
 
-    grid[row][col] = 1;
-    paintWhite(pos)
-    if (prev) {
-      [intRow, intCol] = intermediateSpace(pos, prev);
-      grid[intRow][intCol] = 1;
-      paintWhite([intRow, intCol]);
-    }
+const isInBounds = (row, col) => {
+  return (row < rowNum && row >= 0) && (col < colNum && col >= 0);
+};
 
-    //take care of cleanup here
-    surroundingPositions(pos).filter((surrounding) => {
-      [surrX, surrY] = surrounding;
-      if (!isValidSpace(surrounding)){
-        [interX, interY] = intermediateSpace(pos, surrounding)
-        if (grid[interX][interY] === 0){
-          paintBlack([interX, interY]);
-        }
+intermediateSpace = (current, prev) => {
+  [currentRow, currentCol] = current;
+  [prevRow, prevCol] = prev;
+  intermediateRow = (currentRow + prevRow) / 2;
+  intermediateCol = (currentCol + prevCol) / 2;
+  return [intermediateRow, intermediateCol];
+};
+
+const openSpace = (pos, prev) => {
+  [row, col] = pos;
+  grid[row][col] = 1;
+  paintWhite(pos)
+  if (prev) {
+    [intRow, intCol] = intermediateSpace(pos, prev);
+    grid[intRow][intCol] = 1;
+    paintWhite([intRow, intCol]);
+  }
+  //take care of cleanup here
+  surroundingPositions(pos).filter((surrounding) => {
+    [surrX, surrY] = surrounding;
+    if (!isValidSpace(surrounding)){
+      [interX, interY] = intermediateSpace(pos, surrounding)
+      if (grid[interX][interY] === 0){
+        paintBlack([interX, interY]);
       }
-    })
-  };
-
-  const isValidSpace = (pos) => {
-    let [row, col] = pos;
-    return isInBounds(row, col) && grid[row][col] === 0;
-  };
-
-  const surroundingPositions = (pos) => {
-    let [row, col] = pos;
-    let positions = [];
-    positions.push([row - 2, col]);
-    positions.push([row, col + 2]);
-    positions.push([row + 2, col]);
-    positions.push([row, col - 2]);
-    return positions.filter(pos => {
-      return isInBounds(pos[0], pos[1]);
-    });
-  };
-
-
-
-  const validProbe = (probe) => {
-    if (!isValidSpace(probe.pos)) return false;
-    return true;
-    // let [row, col] = probe.pos;
-    // if (row === 0 && col === 0) return false;
-    // let [fromRow, fromCol] = probe.prev;
-    // return surroundingPositions(probe.pos).every((border) => {
-    //   [borderingRow, borderingCol] = border;
-    //   return (fromRow === borderingRow && fromCol === borderingCol) || isValidSpace(border);
-    // });
-  };
-
-  //need a function to build frontier, needs to take a move and store surrounding Positions as well as the directions.
-
-  // when you make a new frontier, clear frontiers of all surrounding spaces and then replace with own.
-  //this can be called absorb frontier?
-  const buildFrontier = (pos) => {
-    //actually, should save frontier to temp array, then filter it for validProbe ness.
-    let [row, col] = pos;
-    let surroundingSquares = [];
-    surroundingSquares.push({
-      pos: [row - 2, col], prev: pos
-    });
-    surroundingSquares.push({
-      pos: [row, col + 2], prev: pos
-    });
-    surroundingSquares.push({
-      pos: [row + 2, col], prev: pos
-    });
-    surroundingSquares.push({
-      pos: [row, col - 2], prev: pos
-    });
-    validSurrounding = surroundingSquares.filter(probe => validProbe(probe));
-    frontier = frontier.concat(validSurrounding);
-  };
-
-
-  let frontier = [];
-
-  Array.prototype.shuffle = function(){
-    var i = 0, j = 0, temp = null;
-    for (i = this.length - 1; i > 0; i -= 1) {
-      j = Math.floor(Math.random() * (i + 1));
-      temp = this[i];
-      this[i] = this[j];
-      this[j] = temp;
     }
-    return this;
-  };
+  })
+};
 
-  Array.prototype.randomPop = function(){
-    return this.shuffle().pop();
-  };
+const isValidSpace = (pos) => {
+  let [row, col] = pos;
+  return isInBounds(row, col) && grid[row][col] === 0;
+};
 
-  const startPos = [0, 0];
+const surroundingPositions = (pos) => {
+  let [row, col] = pos;
+  let positions = [];
+  positions.push([row - 2, col]);
+  positions.push([row, col + 2]);
+  positions.push([row + 2, col]);
+  positions.push([row, col - 2]);
+  return positions.filter(pos => {
+    return isInBounds(pos[0], pos[1]);
+  });
+};
 
+const validProbe = (probe) => {
+  if (!isValidSpace(probe.pos)) return false;
+  return true;
+};
 
-  const buildMaze = (start) => {
-    openSpace(start);
-    buildFrontier(start);
+const buildFrontier = (pos) => {
+  let [row, col] = pos;
+  let surroundingSquares = [];
+  surroundingSquares.push(
+    {pos: [row - 2, col], prev: pos},
+    {pos: [row, col + 2], prev: pos},
+    {pos: [row + 2, col], prev: pos},
+    {pos: [row, col - 2], prev: pos}
+  );
+  validSurrounding = surroundingSquares.filter(probe => validProbe(probe));
+  frontier = frontier.concat(validSurrounding);
+};
 
-    while (frontier.length > 0){
-      nextOpenSpace = frontier.randomPop();
-      openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
-      frontier = frontier.filter((probe) => {
-        return surroundingPositions(nextOpenSpace.pos).every(pos => {
-          return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
-        });
+let frontier = [];
+const startPos = [0, 0];
+
+const buildMaze = (start) => {
+  openSpace(start);
+  buildFrontier(start);
+  while (frontier.length > 0){
+    nextOpenSpace = frontier.randomPop();
+    openSpace(nextOpenSpace.pos, nextOpenSpace.prev);
+    frontier = frontier.filter((probe) => {
+      return surroundingPositions(nextOpenSpace.pos).every(pos => {
+        return probe.pos[0] !== pos[0] || probe.pos[1] !== pos[1];
       });
-      buildFrontier(nextOpenSpace.pos);
+    });
+    buildFrontier(nextOpenSpace.pos);
+  }
+};
+
+let pointers = new Array(100).fill(0).map(row => new Array(80).fill(0));
+
+function buildGrid(){
+  let svgg = d3.select("#maze")
+  .append("svg")
+  .style("border", "solid black")
+  .style("border-width", "7px 0px 0px 7px")
+  .attr("width", 700)
+  .attr("height", 560);
+  for (let i = 0; i < 100; i++){
+    for(let j = 0; j < 80; j++ ){
+      svgg.append("rect")
+      .attr({
+        x: i * 7,
+        y: j * 7,
+        width: 7,
+        height: 7,
+        fill: "black"
+        })
+      pointers[i][j] = d3.selectAll("rect").last()[0][0];
     }
-  };
-
-
-
-
-  d3.selection.prototype.last = function() {
-    var last = this.size() - 1;
-    return d3.select(this[0][last]);
-  };
-  let pointers = new Array(100).fill(0).map(row => new Array(80).fill(0));
-  function buildGrid(){
-    let svgg = d3.select("#maze")
-    .append("svg")
-
-    .style("border", "solid black")
-    .style("border-width", "7px 0px 0px 7px")
-    // .attr("transform", "translate(200, 100 )")
-    .attr("width", 700)
-    .attr("height", 560);
-    for (let i = 0; i < 100; i++){
-      for(let j = 0; j < 80; j++ ){
-        svgg.append("rect")
-        .attr({
-          x: i * 7,
-          y: j * 7,
-          width: 7,
-          height: 7,
-          fill: "black"
-          })
-        pointers[i][j] = d3.selectAll("rect").last()[0][0];
-      }
-    }
-  };
-
-function paintWhite(coords){
-  [row, col] = coords;
-  const node = pointers[row][col]
-  node.setAttribute("fill", "white");
-}
-
-function paintRed(coords){
-  [row, col] = coords;
-  const node = pointers[row][col]
-  node.setAttribute("fill", "blue");
-}
-function paintBlue(coords){
-  [row, col] = coords;
-  const node = pointers[row][col]
-  node.setAttribute("fill", "blue");
-}
-
-function paintBlack(coords){
-  [row, col] = coords;
-  const node = pointers[row][col];
-  node.setAttribute("fill", "black");
-}
+  }
+};
 
 buildGrid();
 
@@ -272,41 +203,27 @@ function buildRandom(){
 }
 
 const openExplore = (pos, prev) => {
-  [row, col] = pos;
+  const [row, col] = pos;
   grid[row][col] = 1;
 
   if (prev) {
-    [intRow, intCol] = intermediateSpace(pos, prev);
+    const [intRow, intCol] = intermediateSpace(pos, prev);
     grid[intRow][intCol] = 1;
   }
 };
 
-const validExplore = (probe) => {
-  if (!isValidSpace(probe)) return false;
-  return true;
-};
-
-  const buildExploreFrontier = (pos) => {
-  let [row, col] = pos;
+const buildExploreFrontier = (pos) => {
+  const [row, col] = pos;
   let surroundingSquares = [];
   surroundingSquares.push(
-    [row - 2, col]
-  );
-  surroundingSquares.push(
-    [row, col + 2]
-  );
-  surroundingSquares.push(
-    [row + 2, col]
-  );
-  surroundingSquares.push(
+    [row - 2, col],
+    [row, col + 2],
+    [row + 2, col],
     [row, col - 2]
   );
-  return surroundingSquares.filter(probe => validExplore(probe));
+  return surroundingSquares.filter(probe => isValidSpace(probe));
 };
 
-
-//change gears, for each state of the maze, store an object with data to paint each color
-//calculate the maze, then draw it after
 let moves = [];
 let timeouts = [];
 
@@ -316,68 +233,42 @@ const explore = (start, prev) => {
     black: [],
     blue: []
   };
-
   if (!$("#dfs").hasClass("selected")){
     return null;
   }
-    openExplore(start, prev);
-    //color prev to open white
-    if (prev){
-      move.white.push(intermediateSpace(start, prev));
-      move.white.push(prev);
+  openExplore(start, prev);
+  if (prev){
+    move.white.push(intermediateSpace(start, prev));
+    move.white.push(prev);
+  }
+  move.white.push(start);
+  surroundingPositions(start).forEach((square) => {
+    if (isValidSpace(square)){
+      move.blue.push(intermediateSpace(start, square))
+      move.blue.push(square)
     }
-
-    move.white.push(start);
-
-    surroundingPositions(start).forEach((square) => {
-      if (isValidSpace(square)){
-        move.blue.push(intermediateSpace(start, square))
-        move.blue.push(square)
-      }
-      else if (square[0] !== start[0] || square[1] !== start[1]){
-        move.black.push(intermediateSpace(start, square))
-      }
-    });
-    moves.push(move);
-    let exploreFrontier = surroundingPositions(start).shuffle();
-      exploreFrontier.forEach((probe, i) => {
-          if (validExplore(probe)){
-            explore(probe, start)
-          }
-          else {
-            // move.black.push(intermediateSpace(start, probe))
-          }
-      });
+    else if (square[0] !== start[0] || square[1] !== start[1]){
+      move.black.push(intermediateSpace(start, square))
+    }
+  });
+  moves.push(move);
+  let exploreFrontier = surroundingPositions(start).shuffle();
+  exploreFrontier.forEach((probe, i) => {
+    if (isValidSpace(probe))
+      explore(probe, start)
+  });
 };
 
 const drawDFS = (moves) => {
-    moves.forEach((move, i) => {
-      timeout = setTimeout(() => {
-        move.blue.forEach((pos) => paintBlue(pos))
-        move.black.forEach((pos) => paintBlack(pos))
-        move.white.forEach((posi) => paintWhite(posi))
-      }, 10 * i)
-      timeouts.push(timeout);
-    })
-}
-
-stopCreating = buildRandom();
-
-const reset = () => {
-  clearInterval(stopCreating);
-  moves = [];
-  timeouts = timeouts.map((timeout) => {
-    clearTimeout(timeout)
-    return null;
-  });
-  resetGrid(100, 80);
-  pointers.forEach((row) => {
-    row.forEach((node) => {
-      node.setAttribute("fill", "black");
-    })
+  moves.forEach((move, i) => {
+    timeout = setTimeout(() => {
+      move.blue.forEach((pos) => paintBlue(pos))
+      move.black.forEach((pos) => paintBlack(pos))
+      move.white.forEach((posi) => paintWhite(posi))
+    }, 10 * i)
+    timeouts.push(timeout);
   })
 }
-
 
 const hasOpening = (pos) => {
   return surroundingPositions(pos).filter(p => isValidSpace(p)).count > 0;
@@ -420,8 +311,8 @@ const alreadyInPath = (path, newPos) => {
 const pathIndex = (path, newPos) => {
   let index = -1;
   path.forEach((pos, i) => {
-    let [pathRow, pathCol] = pos;
-    let [newRow, newCol] = newPos;
+    const [pathRow, pathCol] = pos;
+    const [newRow, newCol] = newPos;
     if (pathRow === newRow && pathCol === newCol)
       index = i;
   });
@@ -435,13 +326,12 @@ const buildWalker = (startPos) => {
   randomDir = surroundingPositions(startPos).randomPop();
   paintBlue(randomDir);
   explorePath.push(randomDir);
-
   stopCreating = setInterval(() => {
-  if (finished()){
-    clearInterval(stopCreating);
-    return null;
-  }
-
+    if (finished()){
+      clearInterval(stopCreating);
+      return null;
+    }
+    //Add a new explorer if there is none
     if (explorePath.length === 0){
       const randomStart = randomStartPosition();
       explorePath.push(randomStart);
@@ -452,60 +342,104 @@ const buildWalker = (startPos) => {
         if (explorePath.length === 1){
           return true;
         }
+        //Mazes sure it does't destroy itself by selecting the last explore spot
+        //Takes the second from the end to account for the intermediate space
         [preRow, preCol] = explorePath[explorePath.length - 3]
-
         return preRow !== pos[0] || preCol !== pos[1];
       }).randomPop();
-    const [contRow, contCol] = probeContinuation;
-    let isInPath = alreadyInPath(explorePath, probeContinuation);
+      const [contRow, contCol] = probeContinuation;
+      let isInPath = alreadyInPath(explorePath, probeContinuation);
 
-    if (grid[contRow][contCol] === 1){
-      explorePath.push(intermediateSpace(explorePath[explorePath.length - 1], probeContinuation))
-      explorePath.push(probeContinuation);
-      explorePath.forEach((pos) => {
-        openSpace(pos);
-        paintWhite(pos);
-      })
-      explorePath = [];
-
-    } else if (isInPath) {
-      let matchIndex = pathIndex(explorePath, probeContinuation);
-      if (matchIndex <= 2){
-        explorePath.forEach(p => paintBlack(p));
-        explorePath = []
+      if (grid[contRow][contCol] === 1){
+        explorePath.push(intermediateSpace(explorePath[explorePath.length - 1], probeContinuation))
+        explorePath.push(probeContinuation);
+        explorePath.forEach((pos) => {
+          openSpace(pos);
+          paintWhite(pos);
+        })
+        explorePath = [];
+        } else if (isInPath) {
+        let matchIndex = pathIndex(explorePath, probeContinuation);
+        if (matchIndex <= 2){
+          explorePath.forEach(p => paintBlack(p));
+          explorePath = []
+        } else {
+          explorePath.slice(matchIndex + 1).forEach(p => paintBlack(p));
+          explorePath = explorePath.slice(0, matchIndex + 1);
+        }
       } else {
-      explorePath.slice(matchIndex + 1).forEach(p => paintBlack(p));
-      explorePath = explorePath.slice(0, matchIndex + 1);
-    }
-    }
-    else {
-      const interSpace = intermediateSpace(explorePath[explorePath.length - 1], probeContinuation);
-      explorePath.push(interSpace)
-      explorePath.push(probeContinuation);
-      paintBlue(interSpace);
-      paintBlue(probeContinuation);
-    }
-}, 6)
+        const interSpace = intermediateSpace(explorePath[explorePath.length - 1], probeContinuation);
+        explorePath.push(interSpace)
+        explorePath.push(probeContinuation);
+        paintBlue(interSpace);
+        paintBlue(probeContinuation);
+      }
+  }, 1)
 }
 
+function paintWhite(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "white");
+}
 
-  $("#random").click(function(){
-    reset();
-    frontier = [];
-    stopCreating = buildRandom();
+function paintRed(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "blue");
+}
+function paintBlue(coords){
+  [row, col] = coords;
+  const node = pointers[row][col]
+  node.setAttribute("fill", "blue");
+}
+
+function paintBlack(coords){
+  [row, col] = coords;
+  const node = pointers[row][col];
+  node.setAttribute("fill", "black");
+}
+
+// starts default maze creation on page load
+stopCreating = buildRandom();
+
+const reset = () => {
+  clearInterval(stopCreating);
+  moves = [];
+  timeouts = timeouts.map((timeout) => {
+    clearTimeout(timeout)
+    return null;
   });
-
-  $("#dfs").click(function(){
-    reset();
-    moves = [];
-    explore(startPos);
-    drawDFS(moves);
+  resetGrid(100, 80);
+  pointers.forEach((row) => {
+    row.forEach((node) => {
+      node.setAttribute("fill", "black");
+    })
   })
+}
 
-  $("#walk").click(function(){
-    reset();
-    buildWalker(startPos);
-  })
-      </script>
-      </body>
-    </html>
+$('.toggle').on('click', function(){
+    $('.toggle').removeClass('selected');
+    $(this).addClass('selected');
+});
+
+$("#random").click(function(){
+  reset();
+  frontier = [];
+  stopCreating = buildRandom();
+});
+
+$("#dfs").click(function(){
+  reset();
+  moves = [];
+  explore(startPos);
+  drawDFS(moves);
+})
+
+$("#walk").click(function(){
+  reset();
+  buildWalker(startPos);
+})
+    </script>
+  </body>
+</html>

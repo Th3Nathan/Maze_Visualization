@@ -418,13 +418,14 @@ const alreadyInPath = (path, newPos) => {
 };
 
 const pathIndex = (path, newPos) => {
+  let index = -1;
   path.forEach((pos, i) => {
     let [pathRow, pathCol] = pos;
     let [newRow, newCol] = newPos;
-    if (pathRow === newRow || pathCol === newCol)
-      return i;
+    if (pathRow === newRow && pathCol === newCol)
+      index = i;
   });
-  return -1;
+  return index;
 };
 
 const buildWalker = (startPos) => {
@@ -446,7 +447,15 @@ const buildWalker = (startPos) => {
       explorePath.push(randomStart);
       paintBlue(randomStart);
     }
-    let probeContinuation = surroundingPositions(explorePath[explorePath.length - 1]).randomPop();
+    let probeContinuation = surroundingPositions(explorePath[explorePath.length - 1])
+      .filter((pos) => {
+        if (explorePath.length === 1){
+          return true;
+        }
+        [preRow, preCol] = explorePath[explorePath.length - 3]
+
+        return preRow !== pos[0] || preCol !== pos[1];
+      }).randomPop();
     const [contRow, contCol] = probeContinuation;
     let isInPath = alreadyInPath(explorePath, probeContinuation);
 
@@ -460,10 +469,14 @@ const buildWalker = (startPos) => {
       explorePath = [];
 
     } else if (isInPath) {
-      newPath = explorePath.slice(0, pathIndex(explorePath, probeContinuation) + 1);
-      explorePath.forEach(p => paintBlack(p));
-      explorePath = newPath;
-
+      let matchIndex = pathIndex(explorePath, probeContinuation);
+      if (matchIndex <= 2){
+        explorePath.forEach(p => paintBlack(p));
+        explorePath = []
+      } else {
+      explorePath.slice(matchIndex + 1).forEach(p => paintBlack(p));
+      explorePath = explorePath.slice(0, matchIndex + 1);
+    }
     }
     else {
       const interSpace = intermediateSpace(explorePath[explorePath.length - 1], probeContinuation);
@@ -472,7 +485,7 @@ const buildWalker = (startPos) => {
       paintBlue(interSpace);
       paintBlue(probeContinuation);
     }
-}, 100)
+}, 6)
 }
 
 

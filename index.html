@@ -28,7 +28,7 @@
 <div id="maze"></div>
 <div class="buttons">
   <button id="random" class="toggle selected">Random</button>
-  <button class="toggle">Random Walker</button>
+  <button id="walk" class="toggle">Random Walker</button>
   <button id="dfs" class="toggle">Depth First</button>
 </div>
 
@@ -378,6 +378,104 @@ const reset = () => {
   })
 }
 
+
+const hasOpening = (pos) => {
+  return surroundingPositions(pos).filter(p => isValidSpace(p)).count > 0;
+};
+
+const finished = () => {
+  for(let i = 0; i < grid.length; i += 2){
+    for(let j = 0; j < grid[0].length; j += 2){
+      if (grid[i][j] !== 1)
+      return false;
+    }
+  }
+  return true;
+};
+
+const randomStartPosition = () => {
+  for(let i = 0; i < grid.length; i += 2){
+    for(let j = 0; j < grid[0].length; j += 2){
+      if (grid[i][j] === 1){
+        let potentialSpaces = surroundingPositions([i, j]).filter((pos) => isValidSpace(pos))
+        if (potentialSpaces.length !== 0)
+          return potentialSpaces.randomPop();
+      }
+    }
+  }
+}
+
+const alreadyInPath = (path, newPos) => {
+  let inPath = false;
+  path.forEach((pos) => {
+    [pathRow, pathCol] = pos;
+    [newRow, newCol] = newPos;
+    if (pathRow === newRow && pathCol === newCol){
+      inPath = true;
+    }
+  });
+  return inPath;
+};
+
+const pathIndex = (path, newPos) => {
+  path.forEach((pos, i) => {
+    let [pathRow, pathCol] = pos;
+    let [newRow, newCol] = newPos;
+    if (pathRow === newRow || pathCol === newCol)
+      return i;
+  });
+  return -1;
+};
+
+const buildWalker = (startPos) => {
+  let explorePath = [];
+  openSpace(startPos);
+  paintWhite(startPos);
+  randomDir = surroundingPositions(startPos).randomPop();
+  paintBlue(randomDir);
+  explorePath.push(randomDir);
+
+  stopCreating = setInterval(() => {
+  if (finished()){
+    clearInterval(stopCreating);
+    return null;
+  }
+
+    if (explorePath.length === 0){
+      const randomStart = randomStartPosition();
+      explorePath.push(randomStart);
+      paintBlue(randomStart);
+    }
+    let probeContinuation = surroundingPositions(explorePath[explorePath.length - 1]).randomPop();
+    const [contRow, contCol] = probeContinuation;
+    let isInPath = alreadyInPath(explorePath, probeContinuation);
+
+    if (grid[contRow][contCol] === 1){
+      explorePath.push(intermediateSpace(explorePath[explorePath.length - 1], probeContinuation))
+      explorePath.push(probeContinuation);
+      explorePath.forEach((pos) => {
+        openSpace(pos);
+        paintWhite(pos);
+      })
+      explorePath = [];
+
+    } else if (isInPath) {
+      newPath = explorePath.slice(0, pathIndex(explorePath, probeContinuation) + 1);
+      explorePath.forEach(p => paintBlack(p));
+      explorePath = newPath;
+
+    }
+    else {
+      const interSpace = intermediateSpace(explorePath[explorePath.length - 1], probeContinuation);
+      explorePath.push(interSpace)
+      explorePath.push(probeContinuation);
+      paintBlue(interSpace);
+      paintBlue(probeContinuation);
+    }
+}, 100)
+}
+
+
   $("#random").click(function(){
     reset();
     frontier = [];
@@ -389,6 +487,11 @@ const reset = () => {
     moves = [];
     explore(startPos);
     drawDFS(moves);
+  })
+
+  $("#walk").click(function(){
+    reset();
+    buildWalker(startPos);
   })
       </script>
       </body>

@@ -29,9 +29,89 @@
       <button id="random" class="toggle selected">Random</button>
       <button id="walk" class="toggle">Random Walker</button>
       <button id="dfs" class="toggle">Depth First</button>
+      <button id="heap" class="toggle">Heap</button>
     </div>
 
   <script type="text/javascript">
+
+
+class Heap {
+  constructor(){
+    this.store = [];
+  }
+
+  peek(){
+    return this.store[0];
+  }
+
+  swap(aIdx, bIdx){
+    const temp = this.store[aIdx];
+    this.store[aIdx] = this.store[bIdx];
+    this.store[bIdx] = temp;
+  }
+
+  up(childIndex){
+    const parentIndex = Heap.parentIndex(childIndex);
+    if (!parentIndex) return;
+    const parent = this.store[parentIndex];
+    const child = this.store[childIndex];
+    if (parent.weight > child.weight){
+      this.swap(parentIndex, childIndex);
+      if (parentIndex > 0) this.up(parentIndex);
+    }
+  }
+
+  down(parentIdx){
+    const lChildIdx = Heap.childIndexes(parentIdx, this.store.length)[0];
+    const rChildIdx = Heap.childIndexes(parentIdx, this.store.length)[1];
+    const parent = this.store[parentIdx];
+    const lChild = this.store[lChildIdx];
+    const rChild = this.store[rChildIdx];
+
+    //If there are no children, stop process
+    if (!lChild)
+      return;
+    //If there is only one child, compare with that child and swap if needed
+    if (!rChild){
+      if (parent.weight > lChild.weight){
+        this.swap(parentIdx, lChildIdx);
+        this.down(lChildIdx);
+      }
+      return;
+    }
+    //finally, account for having two children by swapping with the lower one
+    //first return if the parent is already lower than both of them
+    if (parent.weight <= rChild.weight && parent.weight <= lChild.weight)
+      return;
+    const swapIndex = lChild.weight < rChild.weight ? lChildIdx : rChildIdx;
+    this.swap(parentIdx, swapIndex);
+    this.down(swapIndex);
+    }
+
+  insert(node){
+    this.store.push(node);
+    this.up(this.store.length - 1);
+  }
+
+  extract(){
+    this.swap(0, this.store.length - 1);
+    const extracted = this.store.pop();
+    this.down(0);
+    return extracted;
+  }
+
+  static childIndexes(parentIndex, length){
+    const left = parentIndex * 2 + 1;
+    const right = left + 1;
+    return [left, right].filter(i => i < length);
+  }
+
+  static parentIndex(childIndex){
+    if (childIndex <= 0)
+      return;
+    return Math.floor((childIndex - 1) / 2);
+  }
+}
 
 Array.prototype.shuffle = function(){
   var i = 0, j = 0, temp = null;
@@ -259,13 +339,13 @@ const explore = (start, prev) => {
   });
 };
 
-const drawDFS = (moves) => {
+const drawNodes = (moves) => {
   moves.forEach((move, i) => {
     timeout = setTimeout(() => {
       move.blue.forEach((pos) => paintBlue(pos))
       move.black.forEach((pos) => paintBlack(pos))
       move.white.forEach((posi) => paintWhite(posi))
-    }, 10 * i)
+    }, 6 * i)
     timeouts.push(timeout);
   })
 }
@@ -377,6 +457,62 @@ const buildWalker = (startPos) => {
   }, 1)
 }
 
+
+h = new Heap();
+
+function heapStep(startNode){
+  let move = {
+    white: [],
+    black: [],
+    blue: []
+  };
+  if (!$("#heap").hasClass("selected")){
+    return null;
+  }
+  if (isValidSpace(startNode.pos)){
+    openExplore(startNode.pos, startNode.prev);
+    if (startNode.prev){
+      move.white.push(intermediateSpace(startNode.pos, startNode.prev));
+      move.white.push(startNode.prev);
+    }
+    move.white.push(startNode.pos);
+  }
+
+  //loop over invalid moves and paint intermediate black
+  // const invalidNonConnectedPositions = surroundingPositions(startNode.pos).filter(p => {
+  //   return !isValidSpace(p) && (p[0] !== startNode.prev[0] || p[1] !== startNode.prev[1]);
+  // });
+  // invalidNonConnectedPositions.forEach(p => {
+  //   move.black.push(intermediateSpace(startNode.pos, startNode.prev))
+  // })
+
+  // validPositions = surroundingPositions(startNode.pos).filter(p => isValidSpace(p));
+  let validPositions = [];
+  surroundingPositions(startNode.pos).forEach(p => {
+    if (isValidSpace(p)){
+      validPositions.push(p);
+    } else {
+      if (grid[intermediateSpace(p, startNode.pos)[0]][intermediateSpace(p, startNode.pos)[1]] === 0){
+        move.black.push(intermediateSpace(p, startNode.pos))
+      }
+    }
+  });
+  weightedPositions = validPositions.map(p => {
+    const randomWeight = Math.floor(Math.random() * 100);
+    return {pos: p, weight: randomWeight, prev: startNode.pos};
+  });
+  weightedPositions.forEach(p => {
+    h.insert(p);
+    move.blue.push(intermediateSpace(startNode.pos, p.pos));
+    move.blue.push(p.pos);
+  });
+  moves.push(move);
+  if (h.peek()){
+    heapStep(h.extract());
+  }
+}
+
+
 function paintWhite(coords){
   [row, col] = coords;
   const node = pointers[row][col]
@@ -433,7 +569,15 @@ $("#dfs").click(function(){
   reset();
   moves = [];
   explore(startPos);
-  drawDFS(moves);
+  drawNodes(moves);
+})
+
+$("#heap").click(function(){
+  let start = {pos: [0, 0], weight: 1}
+  reset();
+  moves = [];
+  heapStep(start);
+  drawNodes(moves);
 })
 
 $("#walk").click(function(){

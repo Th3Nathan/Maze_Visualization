@@ -1,7 +1,7 @@
 # aMAZEing Visuals
-![image](./images/screenshot.png)
+![image](./images/maze.png)
 
-[live](https://th3nathan.github.io/Maze_Visualization/)
+[live](nathanvass.site/Maze_Visualization/)
 
 Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach, a depth first approach, and one using a random walker.
 

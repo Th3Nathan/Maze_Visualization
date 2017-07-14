@@ -3,7 +3,7 @@
 
 [live](http://www.nathanvass.site/Maze_Visualization/)
 
-Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach, a depth first approach, and one using a random walker.
+Displays visualizations of how different algorithms create mazes. Spaces the computer is "thinking" about expanding into are displayed in blue. Currently features a randomized approach, one using a heap, a depth first approach, and one using a random walker.
 
 ## Technologies
 - JavaScript

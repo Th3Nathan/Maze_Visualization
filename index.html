@@ -270,6 +270,8 @@ const buildMaze = (start) => {
 
 let pointers = new Array(100).fill(0).map(row => new Array(80).fill(0));
 
+
+
 function buildGrid(){
   let svgg = d3.select("#maze")
   .append("svg")
@@ -277,9 +279,10 @@ function buildGrid(){
   .style("border-width", "7px 0px 0px 7px")
   .attr("width", 700)
   .attr("height", 560);
+  let count = 0;
   for (let i = 0; i < 100; i++){
     for(let j = 0; j < 80; j++ ){
-      svgg.append("rect")
+      let rect = svgg.append("rect")
       .attr({
         x: i * 7,
         y: j * 7,
@@ -287,7 +290,8 @@ function buildGrid(){
         height: 7,
         fill: "black"
         })
-      pointers[i][j] = d3.selectAll("rect").last()[0][0];
+      pointers[i][j] = rect[0][0];
+      count ++;
     }
   }
 };

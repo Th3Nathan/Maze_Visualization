@@ -20,6 +20,16 @@ img {
   left: 40px;
 }
 
+.subtitle {
+  position: absolute;
+  color: #2E4172;
+  font-size: 24px;
+  font-weight: bold;
+  font-family: sans-serif;
+  bottom: 18px;
+  left: 650px;
+}
+
 .toggle {
   background: none;
   border: none;
@@ -54,6 +64,7 @@ img {
   right: 140px;
   bottom: 10px;
   display: flex;
+  color: #1F1959;
 }
 
 .selected {
@@ -77,4 +88,8 @@ img {
   position: relative;
   padding: 10px;
   padding-top: 0px;
+}
+
+.fa {
+  color: #2E4172;
 }
